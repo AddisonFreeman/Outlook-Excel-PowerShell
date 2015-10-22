@@ -1,15 +1,12 @@
 #PowerShell v2.0
 #An application to parse an Outlook inbox for specific attachments
 #	and save their data in a predefined excel spreadsheet
-#
-#	now?: connect to inbox, count number of emails
 
-#TODO make below paths optional parameters
-$srcPath = "C:\Users\addis\GitHub\Outlook-Excel-PowerShell\src\attachment-12-34.txt"
-#$emailSubjectMatch = '^TestSubjectName[0-9]*$'
-#$attachmentMatch = [regex] '^attachment-[0-9][0-9]-[0-9][0-9].txt$'
 $excelPath = "C:\Users\addis\GitHub\Outlook-Excel-PowerShell\end\dest.xlsx"
-$excelPage = "Sheet1"
+$tempDirectory = "C:\Users\addis\GitHub\Outlook-Excel-PowerShell\end" #dont include an ending \ at the end of that line
+$subjectTitle = "0123"
+$attachment = "attachment"
+$i = 1
 
 Add-Type -assembly "Microsoft.Office.Interop.Outlook"
 $o = New-Object -comobject outlook.application
@@ -18,38 +15,26 @@ $inbox = $n.GetDefaultFolder([Microsoft.Office.Interop.Outlook.OlDefaultFolders]
 
 $excel = New-Object -Com Excel.Application
 $workbook = $Excel.Workbooks.Open($excelPath)
+$excelPage = "Sheet1"
 $ws = $Workbook.worksheets | where-object {$_.Name -eq $excelPage}
 
 $inbox.items | foreach {
-	If ($_.subject -match '0123') {
+	If ( ($_.subject -match $subjectTitle) -and $_.UnRead ) {
 		$_.attachments | foreach {
-			If ($_.FileName -match 'attachment') {
-				#$_.Load()
-				$ws.Cells.item(3,2) = 1
+			If ($_.FileName -match $attachment) {
+				$tempAttachFile = "$tempDirectory\attach$i.txt"
+				$_.SaveAsFile($tempAttachFile)
+				$contents = Get-Content $tempAttachFile
+				#Write Each line, $j, from attached file to column $i of excel spreadsheet $sheetNum
+				$j = 1
+				$contents | ForEach-Object { $ws.Cells.item($j,$i) = $_; $j++;  }
+				Write-Host $j, $i, $sheetNum
+				$i++
+				Remove-Item $tempAttachFile
 			}
 		}
 	}
 }
-
+$workbook.SaveAs($excelPath)
 $workbook.Close($true)
 $excel.quit()
-
-#$n.Folders.Item('test.addisonfreeman@gmail.com').Folders.Item('Inbox')
- 
- #Below: testing writing to an excel file
-# $inbox.items | foreach {
-#	If ($_.Subject -match "attachment*") {
-#	$_attachments | foreach {
-		
-		#$content = Get-Content ($_)[4..6]
-		#Write-Host "ok, good"
-#	}
-#}
-			#$ws.Cells.item(3,1) = $content[0] #Row 3, Col 1
-#			$ws.Cells.item(4,1) = $content[1] #Row 4, Col 1
-#			$ws.Cells.item(5,1) = $content[2] #Row 5, Col 1
-#			$workbook.Close($true)
-#			$excel.quit()
-#		}
-#	}
-#}

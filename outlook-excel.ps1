@@ -7,6 +7,7 @@ $tempDirectory = "C:\Users\addis\GitHub\Outlook-Excel-PowerShell\end" #dont incl
 $subjectTitle = "0123"
 $attachment = "attachment"
 $i = 1
+#$columnNamesFlag = False
 
 Add-Type -assembly "Microsoft.Office.Interop.Outlook"
 $o = New-Object -comobject outlook.application
@@ -19,7 +20,7 @@ $excelPage = "Sheet1"
 $ws = $Workbook.worksheets | where-object {$_.Name -eq $excelPage}
 
 $inbox.items | foreach {
-	If ( ($_.subject -match $subjectTitle) -and $_.UnRead ) {
+	If ( ($_.subject -match $subjectTitle) ) {
 		$_.attachments | foreach {
 			If ($_.FileName -match $attachment) {
 				$tempAttachFile = "$tempDirectory\attach$i.txt"
@@ -27,7 +28,8 @@ $inbox.items | foreach {
 				$contents = Get-Content $tempAttachFile
 				#Write Each line, $j, from attached file to column $i of excel spreadsheet $sheetNum
 				$j = 1
-				$contents | ForEach-Object { $ws.Cells.item($j,$i) = $_; $j++;  }
+				#if !ColumnNamesFlag, write left of each line to first column and the data to the second, only take data after that
+				$contents | ForEach-Object { $ws.Cells.item($j,$i) = $_.Split(":")[-1]; $j++;  }
 				Write-Host $j, $i, $sheetNum
 				$i++
 				Remove-Item $tempAttachFile

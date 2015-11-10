@@ -5,7 +5,7 @@
 $excelPath = "C:\Users\addis\GitHub\Outlook-Excel-PowerShell\end\dest.xlsx"
 $tempDirectory = "C:\Users\addis\GitHub\Outlook-Excel-PowerShell\end" #dont include an ending \ at the end of that line
 $subjectTitle = "0123"
-$attachment = "attachment"
+$attachmentName = "attachment"
 $i = 1
 #$columnNamesFlag = False
 
@@ -19,18 +19,29 @@ $workbook = $Excel.Workbooks.Open($excelPath)
 $excelPage = "Sheet1"
 $ws = $Workbook.worksheets | where-object {$_.Name -eq $excelPage}
 
-$inbox.items | foreach {
-	If ( ($_.subject -match $subjectTitle) ) {
-		$_.attachments | foreach {
-			If ($_.FileName -match $attachment) {
+foreach ($item in $inbox.items) {
+	If ( ($item.subject -match $subjectTitle) ) {
+		foreach ($attachment in $item.attachments) {
+			If ($attachment.FileName -match $attachmentName) {
 				$tempAttachFile = "$tempDirectory\attach$i.txt"
-				$_.SaveAsFile($tempAttachFile)
+				$attachment.SaveAsFile($tempAttachFile)
 				$contents = Get-Content $tempAttachFile
 				#Write Each line, $j, from attached file to column $i of excel spreadsheet $sheetNum
 				$j = 1
-				#if !ColumnNamesFlag, write left of each line to first column and the data to the second, only take data after that
-				$contents | ForEach-Object { $ws.Cells.item($j,$i) = $_.Split(":")[-1]; $j++;  }
-				Write-Host $j, $i, $sheetNum
+				$ws.Cells.item($j,$i) = $item.SentOn
+				$j++
+				$contents | ForEach-Object { 
+					[double]$lineDouble = $null
+					[double]::TryParse($_.Split(":")[-1], [ref]$lineDouble)
+					if ($lineDouble) {
+						$ws.Cells.item($j,$i) = $lineDouble.ToString("#.##");; 
+						$j++;
+					} else {
+						$ws.Cells.item($j,$i) = $_
+						$j++
+					}
+				}
+				Write-Host $j, $i
 				$i++
 				Remove-Item $tempAttachFile
 			}

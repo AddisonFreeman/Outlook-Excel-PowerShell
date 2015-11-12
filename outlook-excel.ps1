@@ -28,12 +28,12 @@ foreach ($item in $inbox.items) {
 				$contents = Get-Content $tempAttachFile
 				#Write Each line, $j, from attached file to column $i of excel spreadsheet $sheetNum
 				$j = 1
-				$ws.Cells.item($j,$i) = $item.SentOn
-				$j++
+				#$ws.Cells.item($j,$i) = $item.SentOn
+				#$j++
 				$contents | ForEach-Object { 
 					[double]$lineDouble = $null
 					[double]::TryParse($_.Split(":")[-1], [ref]$lineDouble)
-					if ($lineDouble) {
+					if ($lineDouble -ne $null) {
 						$ws.Cells.item($j,$i) = $lineDouble.ToString("#.##");; 
 						$j++;
 					} else {

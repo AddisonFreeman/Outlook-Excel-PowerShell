@@ -26,19 +26,29 @@ foreach ($item in $inbox.items) {
 				$tempAttachFile = "$tempDirectory\attach$i.txt"
 				$attachment.SaveAsFile($tempAttachFile)
 				$contents = Get-Content $tempAttachFile
-				#Write Each line, $j, from attached file to column $i of excel spreadsheet $sheetNum
 				$j = 1
-				#$ws.Cells.item($j,$i) = $item.SentOn
-				#$j++
 				$contents | ForEach-Object { 
-					[double]$lineDouble = $null
-					[double]::TryParse($_.Split(":")[-1], [ref]$lineDouble)
-					if ($lineDouble -ne $null) {
-						$ws.Cells.item($j,$i) = $lineDouble.ToString("#.##");; 
-						$j++;
-					} else {
-						$ws.Cells.item($j,$i) = $_
+					#if the string is date or time, write string, else check for double at end of line
+					if ( $_ -match "Date") {
+						$ws.Cells.item($j,$i) = $_.Split(":")[-1]
 						$j++
+					} else {
+						if ($_ -match "Time") {
+							$ws.Cells.item($j,$i) = Get-Date ($_.Split(":")[1] + " :" + $_.Split(":")[-1]) -format t
+							$j++
+						} else {
+							[double]$lineDouble = $null
+							[double]::TryParse($_.Split(":")[-1], [ref]$lineDouble) 
+							if ($lineDouble -is [Double]) {
+								if($lineDouble -eq 0) {
+									$ws.Cells.item($j,$i) = $lineDouble; 
+									$j++;
+								} else {
+									$ws.Cells.item($j,$i) = $lineDouble.ToString("#.##");
+									$j++;
+								}
+							}
+						}						
 					}
 				}
 				Write-Host $j, $i
